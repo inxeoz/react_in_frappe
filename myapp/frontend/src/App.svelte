@@ -24,7 +24,7 @@
   </p>
 
   <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more ()9089
+    Click on the Vite and Svelte logos to learn more 1111111
   </p>
 </main>
 
