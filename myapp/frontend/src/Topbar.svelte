@@ -8,7 +8,16 @@
     <div class="left-section">
         <!-- App Name with status -->
         <div class="app-info">
-            <span class="app-name">{appName}</span>
+            <span class="app-name"
+                >{appName}<svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                >
+                    <path d="M12 16L6 10H18L12 16Z" fill="currentColor" />
+                </svg>
+            </span>
             <span class="status-indicator"></span>
         </div>
         <!-- Navigation Tabs -->
@@ -26,16 +35,16 @@
         <span class="settings-text">Settings(00hero)</span>
         <!-- Settings gear icon -->
         <svg
-                class="settings-icon"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
+            class="settings-icon"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
         >
             <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 6v6l4 2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 6v6l4 2"
             />
         </svg>
     </div>
@@ -68,6 +77,8 @@
     .app-name {
         font-size: 1.125rem;
         font-weight: 600;
+        display: flex;
+        flex-direction: row;
     }
 
     .status-indicator {
