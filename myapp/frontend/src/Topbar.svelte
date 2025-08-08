@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     let appName = "App Ticket";
     let status = "active";
 </script>
@@ -11,7 +11,6 @@
             <span class="app-name">{appName}</span>
             <span class="status-indicator"></span>
         </div>
-
         <!-- Navigation Tabs -->
         <div class="nav-tabs">
             <button class="nav-btn">Main Table</button>
@@ -50,12 +49,13 @@
         background-color: #134e4a;
         color: white;
         padding: 0.5rem 1rem;
-        height: 2rem;
+        height: auto;
     }
 
     .left-section {
         display: flex;
         align-items: center;
+        flex-direction: column;
         gap: 1rem;
     }
 
