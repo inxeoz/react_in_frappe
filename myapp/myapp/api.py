@@ -26,4 +26,4 @@ def get_svelte_assets():
         "css": f"/assets/myapp/svelte/assets/{css_file}"
     }
 
-# /home/inxeoz/work/devb/apps/myapp/myapp/myapp/api.py
+    
