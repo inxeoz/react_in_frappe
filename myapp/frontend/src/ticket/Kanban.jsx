@@ -1,116 +1,91 @@
-import React from "react";
-import { useTickets } from "./TicketContext";
-import { format } from "date-fns";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Chip,
-  Box,
-  IconButton,
-} from "@mui/material";
-import { DndContext, closestCenter } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
-import { SortableItem } from "./kanban/SortableItem";
-import { useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import React, { useState } from "react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-// Simple sortable item wrapper provided in this fileset (next block)
-
-const STATUSES = [
-  "Reviewed",
-  "Awaiting customer",
-  "New reply",
-  "Resolved",
-  "Self resolved",
-  "Reopen",
-];
+const initialData = {
+  todo: [
+    { id: "1", text: "Write proposal" },
+    { id: "2", text: "Design mockups" },
+  ],
+  inProgress: [{ id: "3", text: "Develop feature X" }],
+  done: [{ id: "4", text: "Deploy to production" }],
+};
 
 export default function Kanban() {
-  const { tickets, moveTicket } = useTickets();
-  const sensors = useSensors(useSensor(PointerSensor));
+  const [columns, setColumns] = useState(initialData);
 
-  const columns = STATUSES.map((status) => ({
-    id: status,
-    items: tickets.filter((t) => t.status === status),
-  }));
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
 
-  function handleDragEnd(event) {
-    const { active, over } = event;
-    if (!over) return;
-    const [status, indexStr] = over.id.split("::");
-    const index = Number(indexStr);
-    moveTicket(active.id, status, index);
-  }
+    // Moving in the same column
+    if (source.droppableId === destination.droppableId) {
+      const newColumn = Array.from(columns[source.droppableId]);
+      const [moved] = newColumn.splice(source.index, 1);
+      newColumn.splice(destination.index, 0, moved);
+      setColumns({
+        ...columns,
+        [source.droppableId]: newColumn,
+      });
+    } else {
+      // Moving to a different column
+      const sourceCol = Array.from(columns[source.droppableId]);
+      const destCol = Array.from(columns[destination.droppableId]);
+      const [moved] = sourceCol.splice(source.index, 1);
+      destCol.splice(destination.index, 0, moved);
+      setColumns({
+        ...columns,
+        [source.droppableId]: sourceCol,
+        [destination.droppableId]: destCol,
+      });
+    }
+  };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          alignItems: "flex-start",
-          overflowX: "auto",
-          pb: 2,
-        }}
-      >
-        {columns.map((col) => (
-          <Box
-            key={col.id}
-            sx={{
-              minWidth: 280,
-              bgcolor: "background.paper",
-              borderRadius: 1,
-              p: 1,
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>
-              {col.id} ({col.items.length})
-            </Typography>
-            <SortableContext
-              items={col.items.map((i) => i.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {col.items.map((t, i) => (
-                <div key={t.id} id={`${col.id}::${i}`}>
-                  <SortableItem id={t.id}>
-                    <Card sx={{ mb: 1 }}>
-                      <CardContent>
-                        <Typography variant="body1">{t.title}</Typography>
-                        <Typography
-                          variant="caption"
-                          display="block"
-                          sx={{ color: "text.secondary" }}
-                        >
-                          {t.description}
-                        </Typography>
-                        <Box sx={{ mt: 1, display: "flex", gap: 1 }}>
-                          <Chip label={t.priority} size="small" />
-                          <Chip
-                            label={format(
-                              new Date(t.creationDate),
-                              "MMM d, yyyy",
-                            )}
-                            size="small"
-                          />
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </SortableItem>
-                </div>
-              ))}
-            </SortableContext>
-          </Box>
+    <DragDropContext onDragEnd={onDragEnd}>
+      <div style={{ display: "flex", gap: "20px" }}>
+        {Object.entries(columns).map(([colId, tasks]) => (
+          <Droppable key={colId} droppableId={colId}>
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                style={{
+                  background: "#f4f4f4",
+                  padding: 10,
+                  width: 250,
+                  minHeight: 400,
+                  borderRadius: 4,
+                }}
+              >
+                <h3 style={{ textTransform: "capitalize" }}>{colId}</h3>
+                {tasks.map((task, index) => (
+                  <Draggable key={task.id} draggableId={task.id} index={index}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={{
+                          userSelect: "none",
+                          padding: 16,
+                          margin: "0 0 8px 0",
+                          background: "white",
+                          borderRadius: 4,
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.1)",
+                          ...provided.draggableProps.style,
+                        }}
+                      >
+                        {task.text}
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
         ))}
-      </Box>
-    </DndContext>
+      </div>
+    </DragDropContext>
   );
 }
