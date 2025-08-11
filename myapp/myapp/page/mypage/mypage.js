@@ -1,92 +1,86 @@
+function loadCSS(href) {
+	return new Promise((resolve, reject) => {
+		console.log(`📦 [loadCSS] Preparing to load CSS: ${href}`);
 
+		const link = document.createElement("link");
+		link.rel = "stylesheet";
+		link.href = href;
 
-// frappe.pages['mypage'].on_page_load = async function (wrapper) {
+		link.onload = () => {
+			console.log(`✅ [loadCSS] CSS loaded successfully: ${href}`);
+			resolve();
+		};
 
-//   //build
+		link.onerror = (err) => {
+			console.error(`❌ [loadCSS] Failed to load CSS: ${href}`, err);
+			reject(err);
+		};
 
-// await frappe.call('myapp.myapp.api.devserver.start_vite_dev')
-//   .then(r => console.log('Dev server start response:', r.message));
+		document.head.appendChild(link);
+		console.log(`📄 [loadCSS] <link> tag appended to document.head`);
+	});
+}
 
+frappe.pages["mypage"].on_page_load = async function (wrapper) {
+	console.log("🚀 [mypage] Starting page load sequence...");
 
-//   const page = frappe.ui.make_app_page({
-//     parent: wrapper,
-//     title: 'Svelte + Vite Page',
-//     single_column: true,
-//   });
+	$(wrapper).html(`
+		<div id="loading-ui" style="padding: 2rem; font-size: 1.2rem;">
+			🚀 Building React app... please wait.
+		</div>
+	`);
 
-//   // Create a cache-busting timestamp
-//   const version = Date.now();
+	console.log("🛠 [mypage] Triggering React static build...");
+	const res = await frappe.call("myapp.myapp.api.devserver.build_static_ui");
+	const result = res.message;
 
-//   // Inject Svelte app HTML
-//   $(wrapper).html(`
-//     <div id="svelte-app-wrapper">
-//       <link rel="stylesheet" href="/assets/myapp/svelte/main.css?v=${version}" />
-//       <div id="app"></div>
-//       <script type="module">
-//         import('/assets/myapp/svelte/main.js?v=${version}').then(mod => {
-//           const el = document.getElementById('app');
-//           if (el && mod.mountSvelte) {
-//             mod.mountSvelte(el);
-//           } else {
-//             console.error("mountSvelte not found or target element missing");
-//           }
-//         }).catch(err => {
-//           console.error("Failed to load main.js", err);
-//         });
-//       </script>
-//     </div>
-//   `);
-// };
+	if (result.status !== "success") {
+		frappe.msgprint(__("❌ Failed to build React app: " + result.message));
+		console.error("Build failed:", result.message);
+		return;
+	}
 
+	console.log("✅ [mypage] React build complete:", result.output);
 
+	const page = frappe.ui.make_app_page({
+		parent: wrapper,
+		title: "React + Vite Page",
+		single_column: true,
+	});
 
-frappe.pages['mypage'].on_page_load = async function (wrapper) {
-  // Step 0: Show loading message immediately
-  $(wrapper).html(`
-    <div id="loading-ui" style="padding: 2rem; font-size: 1.2rem;">
-      🚀 Building Svelte app... please wait.
-    </div>
-  `);
+	const version = Date.now();
+	console.log(`🕒 [mypage] Cache-busting version: ${version}`);
 
-  // Step 1: Run the Svelte build
-  const res = await frappe.call('myapp.myapp.api.devserver.build_svelte');
-  const result = res.message;
+	$(wrapper).html(`
+		<div id="react-app-wrapper">
+			<div id="root"></div>
+		</div>
+	`);
 
-  if (result.status !== 'success') {
-    frappe.msgprint(__('❌ Failed to build Svelte app: ' + result.message));
-    console.error('Build failed:', result.message);
-    return;
-  }
+	try {
+		console.log("🎨 [mypage] Attempting to load CSS...");
+		await loadCSS(`/assets/myapp/static_ui/main.css?v=${version}`);
+	} catch (err) {
+		console.error("🚫 [mypage] CSS failed to load:", err);
+	}
 
-  console.log('✅ Svelte build complete:', result.output);
+	console.log("📜 [mypage] Attempting to load main.js...");
+	import(`/assets/myapp/static_ui/main.js?v=${version}`)
+		.then((mod) => {
+			console.log("📦 [mypage] main.js loaded successfully");
 
-  // Step 2: Replace with app content after build
-  const page = frappe.ui.make_app_page({
-    parent: wrapper,
-    title: 'Svelte + Vite Page',
-    single_column: true,
-  });
-
-  const version = Date.now(); // for cache busting
-
-  $(wrapper).html(`
-    <div id="svelte-app-wrapper">
-      <link rel="stylesheet" href="/assets/myapp/svelte/main.css?v=${version}" />
-      <div id="app"></div>
-    </div>
-  `);
-
-  // Step 3: Load and mount Svelte app
-  import(`/assets/myapp/svelte/main.js?v=${version}`)
-    .then(mod => {
-      const el = document.getElementById('app');
-      if (el && mod.mountSvelte) {
-        mod.mountSvelte(el);
-      } else {
-        console.error("mountSvelte not found or #app element missing");
-      }
-    })
-    .catch(err => {
-      console.error("Failed to load main.js", err);
-    });
+			const el = document.getElementById("root");
+			if (el && mod.mountReact) {
+				console.log("🖼 [mypage] Mounting React app...");
+				mod.mountReact(el);
+				console.log("✅ [mypage] React app mounted!");
+			} else {
+				console.error(
+					"❌ [mypage] mountReact not found or #root element missing",
+				);
+			}
+		})
+		.catch((err) => {
+			console.error("🚫 [mypage] Failed to load main.js:", err);
+		});
 };

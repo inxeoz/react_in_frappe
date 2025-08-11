@@ -28,7 +28,7 @@ import frappe
 import os
 
 @frappe.whitelist()
-def build_svelte():
+def build_static_ui():
     try:
         app_path = frappe.get_app_path('myapp')
         frontend_path = os.path.join(app_path, 'frontend')
